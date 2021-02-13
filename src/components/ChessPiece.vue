@@ -1,14 +1,14 @@
 <template>
   <div
     :class="{
-      'bg-black text-white': piece.color === 'b',
-      'bg-white text-black': piece.color === 'w',
+      'bg-black text-white': piece.team === 1,
+      'bg-white text-black': piece.team === 0,
     }"
     class="w-14 h-14 rounded-md flex items-center justify-center font-bold text-sm shadow-xl"
     ref="piece"
   >
     <!-- {{ piece.type }} -->
-    {{ piece.type }}
+    {{ piece.pieceType }}
   </div>
 </template>
 
@@ -17,7 +17,7 @@ export const PieceDataType = "text/x-kanban-card";
 
 export default {
   name: "chess-piece",
-  props: ["piece", "whiteTurn"],
+  props: ["piece"],
   mounted() {
     this.setDraggable();
   },
