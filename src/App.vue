@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div class="w-full h-screen flex items-center justify-center bg-gray-800">
     <div>
       <h1 class="text-center text-white text-3xl font-extrabold mb-3">
@@ -35,13 +36,29 @@
           </tbody>
         </table>
       </div>
+=======
+  <div class="w-full h-screen flex items-center justify-center">
+    <div class="container w-108 h-108 bg-green-500">
+      <table class="table-fixed " cellspacing="0" cellpadding="0">
+        <tbody>
+          <tr v-for="(row, rowIdx) in grid" :key="rowIdx">
+            <td v-for="(col, colIdx) in row" :key="colIdx">
+              <chess-square
+                :piece="col.piece"
+                @piece-moved="movePiece($event, rowIdx, colIdx)"
+              >
+              </chess-square>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {{ chessGrid }}
+>>>>>>> parent of e400348... before adding own logic
     </div>
   </div>
 </template>
 
 <script>
-/* eslint-disable no-unused-vars */
-
 /* eslint-disable vue/no-unused-components */
 // import { v4 } from "uuid";
 // import ChessPiece from "./components/ChessPiece.vue";
@@ -207,6 +224,7 @@ export default {
           this.validMoves[i][j] = INVALID;
         }
       }
+      return { piece: { id: v4(), name: "pawn", type: type } };
     },
     onClick(x, y) {
       // let chessCanvasX = chessCanvas.getBoundingClientRect().left;

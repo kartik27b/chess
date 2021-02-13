@@ -1,5 +1,6 @@
 <template>
   <div
+<<<<<<< HEAD
     :class="{
       'bg-black text-white': piece.team === 1,
       'bg-white text-black': piece.team === 0,
@@ -9,6 +10,13 @@
   >
     <!-- {{ piece.type }} -->
     {{ piece.pieceType }}
+=======
+    draggable="true"
+    class="w-14 h-14 rounded-md bg-blue-700 text-white flex items-center justify-center font-bold text-sm"
+    ref="piece"
+  >
+    {{ piece.type }}
+>>>>>>> parent of e400348... before adding own logic
   </div>
 </template>
 
@@ -25,8 +33,7 @@ export default {
     handleDragStart(event) {
       const dataTransfer = event.dataTransfer;
 
-      dataTransfer.setData("type", this.piece.type);
-      dataTransfer.setData("color", this.piece.color);
+      dataTransfer.setData(PieceDataType, this.piece.id);
       dataTransfer.effectAllowed = "move";
       event.target.style.opacity = 0.2;
     },
