@@ -1,25 +1,34 @@
 <template>
-  <div class="w-full h-screen flex items-center justify-center">
-    <div class="container w-108 h-108 bg-green-500">
-      <table class="table-fixed " cellspacing="0" cellpadding="0">
-        <tbody>
-          <tr v-for="(row, rowIdx) in grid" :key="rowIdx">
-            <td v-for="(col, colIdx) in row" :key="colIdx">
-              <chess-square
-                :piece="col.piece"
-                @piece-moved="movePiece($event, rowIdx, colIdx)"
-              >
-              </chess-square>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      {{ chessGrid }}
+  <div class="w-full h-screen flex items-center justify-center bg-gray-800">
+    <div>
+      <h1 class="text-center text-white text-3xl font-extrabold mb-3">
+        {{ whiteTurn ? "White" : "Black" }}'s Turn
+      </h1>
+      <div class="container w-108 h-108 bg-green-500 shadow-2xl">
+        <table class="table-fixed " cellspacing="0" cellpadding="0">
+          <tbody>
+            <tr v-for="(row, rowIdx) in chessGrid" :key="rowIdx">
+              <td v-for="(col, colIdx) in row" :key="colIdx">
+                <chess-square
+                  :piece="col"
+                  :row="rowIdx"
+                  :col="colIdx"
+                  :whiteTurn="whiteTurn"
+                  @piece-moved="moveChessPiece($event, rowIdx, colIdx)"
+                >
+                </chess-square>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+/* eslint-disable no-unused-vars */
+
 /* eslint-disable vue/no-unused-components */
 import { v4 } from "uuid";
 import ChessPiece from "./components/ChessPiece.vue";
@@ -27,137 +36,99 @@ import ChessSquare from "./components/ChessSquare.vue";
 import { PieceTypes } from "./utils";
 
 import * as Chess from "chess.js";
-// const { Chess } = require("chess.js");
+
 const chess = new Chess();
 
-// while (!chess.game_over()) {
-//   const moves = chess.moves();
-//   const move = moves[Math.floor(Math.random() * moves.length)];
-//   chess.move(move);
-// }
-// console.log(chess.pgn());
-console.log(chess.board());
+console.log(chess.moves());
 
 export default {
   name: "App",
   components: { ChessPiece, ChessSquare },
   data() {
-    const mygrid = [
-      [
-        this.createObject(PieceTypes.ROOK),
-        this.createObject(PieceTypes.KNIGHT),
-        this.createObject(PieceTypes.BISHOP),
-        this.createObject(PieceTypes.QUEEN),
-        this.createObject(PieceTypes.KING),
-        this.createObject(PieceTypes.BISHOP),
-        this.createObject(PieceTypes.KNIGHT),
-        this.createObject(PieceTypes.ROOK),
-      ],
-      [
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-      ],
-      [
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-      ],
-      [
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-      ],
-      [
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-      ],
-      [
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-        this.createObject(),
-      ],
-      [
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-        this.createObject(PieceTypes.PAWN),
-      ],
-      [
-        this.createObject(PieceTypes.ROOK),
-        this.createObject(PieceTypes.KNIGHT),
-        this.createObject(PieceTypes.BISHOP),
-        this.createObject(PieceTypes.QUEEN),
-        this.createObject(PieceTypes.KING),
-        this.createObject(PieceTypes.BISHOP),
-        this.createObject(PieceTypes.KNIGHT),
-        this.createObject(PieceTypes.ROOK),
-      ],
-    ];
-
     return {
-      grid: mygrid,
+      whiteTurn: true,
+      chessGrid: chess.board(),
     };
-  },
-  computed: {
-    chessGrid() {
-      return chess.board();
-    },
   },
   mounted() {},
   methods: {
-    createObject(type) {
-      if (!type) {
-        return { piece: null };
+    checkGameState() {
+      if (chess.in_stalemate()) {
+        console.log("stalemate");
+      } else if (chess.in_draw()) {
+        console.log("in draw");
+      } else if (chess.in_checkmate()) {
+        console.log("in checkmate");
+      } else if (chess.in_check()) {
+        console.log("in check");
       }
-      return { piece: { id: v4(), name: "pawn", type: type } };
     },
-    movePiece(data, rowIdx, colIdx) {
-      // console.log(data, rowIdx, colIdx);
-      let len = this.grid.length;
+    moveChessPiece(data, rowIdx, colIdx) {
+      const { type, color, row, col } = data;
+      // const whiteColor = color === "w" ? false : true;
 
-      let currSquare;
-      for (let i = 0; i < len; i++) {
-        for (let j = 0; j < len; j++) {
-          if (this.grid[i][j].piece && this.grid[i][j].piece.id === data) {
-            currSquare = this.grid[i][j];
+      let move =
+        String.fromCharCode("a".charCodeAt(0) + colIdx) +
+        (this.chessGrid.length - rowIdx);
+
+      let pawn = false;
+
+      if (type === chess.KNIGHT) {
+        move = "N" + move;
+        console.log("knight moved");
+      } else if (type === chess.QUEEN) {
+        move = "Q" + move;
+        console.log("queen moved");
+      } else if (type === chess.BISHOP) {
+        move = "B" + move;
+        console.log("bishop moved");
+      } else if (type === chess.ROOK) {
+        move = "R" + move;
+        console.log("rook moved");
+      } else if (type === chess.KING) {
+        move = "K" + move;
+        console.log("king moved");
+      } else {
+        pawn = true;
+      }
+      const availableMoves = chess.moves();
+      console.log("current moves", chess.moves());
+      let invalid = false;
+
+      if (!pawn) {
+        const killMove = move.substring(0, 1) + "x" + move.substring(1);
+        if (availableMoves.find((currMove) => currMove === killMove)) {
+          chess.move(killMove);
+        } else if (availableMoves.find((currMove) => currMove === move)) {
+          chess.move(move);
+        } else {
+          invalid = true;
+        }
+      } else {
+        let killMove = "x" + move;
+        let found = false;
+
+        for (const currMove of chess.moves()) {
+          if (currMove.includes(killMove)) {
+            found = true;
+            killMove = currMove;
             break;
           }
         }
+        if (!found && availableMoves.find((currMove) => currMove === move)) {
+          chess.move(move);
+        } else {
+          chess.move(killMove);
+        }
       }
-      const moveSquare = this.grid[rowIdx][colIdx];
-      moveSquare.piece = currSquare.piece;
-      currSquare.piece = null;
+
+      // if not pawn
+      // i will generate possible kill moves, knight moved  Nxd5 where moved to d5
+      // if pawn prevpos exd5 => e = prev, d5 = curr
+      console.log("available moves", chess.moves());
+      this.whiteTurn = !this.whiteTurn;
+      this.chessGrid = chess.board();
+      this.checkGameState();
     },
   },
 };

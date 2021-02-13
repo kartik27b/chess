@@ -1,9 +1,13 @@
 <template>
   <div
-    draggable="true"
-    class="w-14 h-14 rounded-md bg-blue-700 text-white flex items-center justify-center font-bold text-sm"
+    :class="{
+      'bg-black text-white': piece.color === 'b',
+      'bg-white text-black': piece.color === 'w',
+    }"
+    class="w-14 h-14 rounded-md flex items-center justify-center font-bold text-sm shadow-xl"
     ref="piece"
   >
+    <!-- {{ piece.type }} -->
     {{ piece.type }}
   </div>
 </template>
@@ -13,7 +17,7 @@ export const PieceDataType = "text/x-kanban-card";
 
 export default {
   name: "chess-piece",
-  props: ["piece"],
+  props: ["piece", "whiteTurn"],
   mounted() {
     this.setDraggable();
   },
@@ -21,7 +25,8 @@ export default {
     handleDragStart(event) {
       const dataTransfer = event.dataTransfer;
 
-      dataTransfer.setData(PieceDataType, this.piece.id);
+      dataTransfer.setData("type", this.piece.type);
+      dataTransfer.setData("color", this.piece.color);
       dataTransfer.effectAllowed = "move";
       event.target.style.opacity = 0.2;
     },
