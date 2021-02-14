@@ -1,74 +1,70 @@
 <template>
   <div
-<<<<<<< HEAD
-    class="border h-20 w-20 border-gray-500 flex items-center justify-center transition-colors duration-200"
+    class="border  h-20 w-20 border-gray-500 flex items-center justify-center transition-colors duration-200"
+    ref="square"
     :class="{
-      'bg-green-500': tile.highlighted,
-      'bg-gray-700': !tile.highlighted,
+      'bg-gray-800': (row + col) % 2,
+      'bg-gray-700': !((row + col) % 2),
     }"
-    ref="square"
   >
-    <!-- {{ tile.pieceType }}
-    {{ tile.team }} -->
-    <!-- <chess-piece
-      v-if="piece"
-      :piece="piece"
-      :whiteTurn="whiteTurn"
-    ></chess-piece> -->
+    <promote
+      v-if="promotion"
+      :promotion="promotion"
+      @make-promotion="$emit('make-promotion', $event)"
+    ></promote>
     <chess-piece
-      :piece="tile"
-      v-if="tile.pieceType !== -1"
-      @click="pieceClicked"
+      :piece="piece"
+      :row="row"
+      :col="col"
+      v-else-if="piece"
     ></chess-piece>
-=======
-    class="bg-blue-100 border h-20 w-20 border-gray-500 flex items-center justify-center"
-    ref="square"
-  >
-    <chess-piece v-if="piece" :piece="piece"></chess-piece>
->>>>>>> parent of e400348... before adding own logic
+    <!-- <promote v-else-if="promotion"></promote> -->
   </div>
 </template>
 
 <script>
-<<<<<<< HEAD
 /* eslint-disable no-unused-vars */
 
 // import { PAWN } from "src/game";
-// import { PieceDataType } from "./ChessPiece.vue";
-=======
 import { PieceDataType } from "./ChessPiece.vue";
->>>>>>> parent of e400348... before adding own logic
 import ChessPiece from "./ChessPiece.vue";
+import { getPosition } from "./utils";
+import Promote from "./Promote.vue";
 
 export default {
   name: "chess-square",
-<<<<<<< HEAD
-  props: ["row", "col", "tile"],
-=======
-  props: ["piece"],
->>>>>>> parent of e400348... before adding own logic
+  props: ["row", "col", "piece", "pendingPromotion"],
   components: {
     ChessPiece,
+    Promote,
+  },
+  watch: {
+    pendingPromotion(val) {
+      if (val && val.to === getPosition(this.row, this.col)) {
+        this.promotion = val;
+      } else {
+        this.promotion = null;
+      }
+    },
   },
   mounted() {
     this.enableDrop();
+    if (
+      this.pendingPromotion &&
+      this.pendingPromotion.to === this.getPosition(this.row, this.col)
+    ) {
+      this.promotion = this.pendingPromotion;
+    } else {
+      this.promotion = null;
+    }
   },
-<<<<<<< HEAD
   data() {
     return {
       // onOver: false,
+      promotion: null,
     };
   },
-  computed: {
-    // pieceType(){
-    // }
-  },
-=======
->>>>>>> parent of e400348... before adding own logic
   methods: {
-    pieceClicked() {
-      this.$emit("piece-clicked", { row: this.row, col: this.col });
-    },
     enableDrop() {
       const square = this.$refs.square;
       square.addEventListener("dragenter", this.handleDragEnter);
@@ -88,8 +84,12 @@ export default {
     handleDrop(event) {
       const data = event.dataTransfer.getData(PieceDataType);
       //   console.log(event.dataTransfer.items);
-      console.log(data);
-      this.$emit("piece-moved", data);
+      // console.log("from", data, " to", getPosition(this.row, this.col));
+      // console.log(data);
+      this.$emit("piece-moved", {
+        from: data,
+        to: getPosition(this.row, this.col),
+      });
     },
   },
 };
