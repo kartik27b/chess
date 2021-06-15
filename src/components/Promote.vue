@@ -7,7 +7,8 @@
       class="w-1/2 h-1/2 rounded-sm cursor-pointer bg-white flex items-center justify-center font-bold text-sm shadow-xl"
       @click="$emit('make-promotion', getPromotionPayload(piece))"
     >
-      {{ piece }}
+      <!-- {{ piece }} -->
+      <img :src="getImage(piece)" alt="" class="w-1/2 h-1/2" />
     </div>
   </div>
 </template>
@@ -24,6 +25,29 @@ export default {
     };
   },
   methods: {
+    getImage(piece) {
+      // const type = this.piece.type;
+      const type = piece;
+      let name = "";
+      if (type === "b") {
+        name = "bishop";
+      } else if (type === "r") {
+        name = "rook";
+      } else if (type === "n") {
+        name = "knight";
+      } else if (type === "p") {
+        name = "pawn";
+      } else if (type === "q") {
+        name = "queen";
+      } else if (type === "k") {
+        name = "king";
+      }
+      // const color = this.piece.color;
+      // eslint-disable-next-line no-unused-vars
+      const filename = "w" + "_" + name + "_1x_ns.png";
+      // return "../pics/" + filename;
+      return require("../pics/" + filename);
+    },
     getPromotionPayload(piece) {
       return {
         piece,

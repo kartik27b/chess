@@ -1,30 +1,65 @@
 <template>
   <div class="w-full h-screen flex items-center justify-center bg-gray-800">
-    <div>
-      <chess-modal
-        :open="isGameOver"
-        :result="result"
-        @new-game="newGame"
-      ></chess-modal>
-      <h1 class="font-bold text-center text-3xl text-white mb-2">
-        {{ turn }}'s Turn
-      </h1>
+    <chess-modal
+      :open="isGameOver"
+      :result="result"
+      @new-game="newGame"
+    ></chess-modal>
+    <div v-if="!isGameOver">
+      <div class="flex items-center justify-between">
+        <h1
+          class="font-bold text-center text-3xl text-white mb-2 bg-blue-600 rounded-md px-3 py-1"
+        >
+          {{ turn }}'s Turn
+        </h1>
+
+        <div class="flex items-center">
+          <label for="sound" class="font-bold text-white text-xl mr-1">
+            Enable Sound</label
+          >
+          <input
+            type="checkbox"
+            name="sound"
+            class="w-5 h-5"
+            v-model="enableSound"
+            value="Enable Rotation"
+          />
+        </div>
+        <div class="flex items-center">
+          <label for="rotation" class="font-bold text-white text-xl mr-1">
+            Enable Rotation</label
+          >
+          <input
+            type="checkbox"
+            name="rotation"
+            class="w-5 h-5"
+            v-model="shouldRotate"
+            value="Enable Rotation"
+          />
+        </div>
+      </div>
+      <audio ref="gameAudio" />
       <transition name="board">
         <div
-          v-if="!isGameOver"
-          class="container w-108 h-108 bg-green-500 shadow-2xl"
+          class="container w-108 h-108 bg-green-500 shadow-2xl transition-transform duration-1000"
+          :class="{ 'rotate-board': rotate && shouldRotate }"
         >
-          <table class="table-fixed " cellspacing="0" cellpadding="0">
+          <table class="table-fixed" cellspacing="0" cellpadding="0">
             <tbody>
               <tr v-for="(row, rowIdx) in chessBoard" :key="rowIdx">
                 <td v-for="(col, colIdx) in row" :key="colIdx">
                   <chess-square
+                    :rotate="rotate && shouldRotate"
                     :piece="col"
                     :row="rowIdx"
                     :col="colIdx"
-                    @piece-moved="moveChessPiece"
-                    @make-promotion="makePromotion"
+                    :highlight="getHightlight(rowIdx, colIdx)"
+                    :checkProp="checkProp"
                     :pendingPromotion="pendingPromotion"
+                    @make-promotion="makePromotion"
+                    @piece-moved="moveChessPiece"
+                    @piece-dragged="pieceDragged"
+                    @piece-drag-end="pieceDragEnd"
                   >
                   </chess-square>
                 </td>
@@ -34,40 +69,77 @@
         </div>
       </transition>
     </div>
+    <div v-if="!isGameOver" class="ml-10">
+      <div
+        class="w-64 h-16 bg-yellow-400 rounded-sm shadow-xl mb-4 flex items-center justify-center font-bold text-2xl"
+      >
+        Check
+      </div>
+      <div
+        class="w-64 h-16 bg-green-500 rounded-sm shadow-xl mb-4 flex items-center justify-center font-bold text-2xl"
+      >
+        Possible Move
+      </div>
+      <div
+        class="w-64 h-16 bg-red-500 rounded-sm shadow-xl mb-4 flex items-center justify-center font-bold text-2xl text-white"
+      >
+        Capture Move
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-/* eslint-disable no-unused-vars */
+// /* eslint-disable no-unused-vars */
 
 /* eslint-disable vue/no-unused-components */
-// import { v4 } from "uuid";
-// import ChessPiece from "./components/ChessPiece.vue";
 import ChessSquare from "./components/ChessSquare.vue";
-// import { PieceTypes } from "./utils";
 
 import * as Chess from "chess.js";
 import ChessModal from "./components/ChessModal.vue";
+
 // let custom = "rnb2bnr/pppPkppp/8/4p3/7q/8/PPPP1PPP/RNBQKBNR w KQ - 1 5";
 // const stalemate = "4k3/4P3/4K3/8/8/8/8/8 b - - 0 78";
 const chess = new Chess();
-console.log(chess.board());
-console.log(chess.game_over());
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+}
 
 export default {
   name: "App",
   components: { ChessSquare, ChessModal },
 
   data() {
+    let highlights = [];
+    for (let i = 0; i < 8; i++) {
+      const curr = [];
+      for (let j = 0; j < 8; j++) {
+        curr.push(false);
+      }
+      highlights.push(curr);
+    }
+
     return {
       chessBoard: chess.board(),
       pendingPromotion: null,
       isGameOver: chess.game_over(),
       result: this.getResult(),
       turn: this.getTurn(),
+      highlights: highlights,
+      rotate: false,
+      shouldRotate: true,
+      enableSound: true,
+      check: false,
+      checkProp: null,
     };
   },
   methods: {
+    getHightlight(row, col) {
+      return this.highlights[row][col];
+    },
     getTurn() {
       return chess.turn() === "w" ? "White" : "Black";
     },
@@ -78,6 +150,7 @@ export default {
       this.isGameOver = chess.game_over();
       this.result = this.getResult();
       this.turn = this.getTurn();
+      this.rotate = false;
     },
     update(pendingPromotion) {
       this.isGameOver = chess.game_over();
@@ -86,6 +159,16 @@ export default {
       this.turn = this.getTurn();
 
       this.pendingPromotion = pendingPromotion;
+      this.rotate = !this.rotate && !this.pendingPromotion;
+
+      if (chess.in_check()) {
+        this.check = true;
+        const turn = chess.turn();
+        this.checkProp = { turn };
+      } else {
+        this.check = false;
+        this.checkProp = null;
+      }
     },
     getResult() {
       if (chess.in_checkmate()) {
@@ -118,12 +201,23 @@ export default {
       if (!this.pendingPromotion) {
         this.move(from, to);
       }
-      console.table(promotions);
     },
     makePromotion({ from, to, piece }) {
-      // console.log(data);
-      // this.move()
       this.move(from, to, piece);
+    },
+    playSound() {
+      if (!this.enableSound) return;
+      const soundVal = getRandomInt(1, 3);
+      const sound = this.$refs.gameAudio;
+      sound.src = require(`../src/sounds/wood${soundVal}.wav`);
+      sound
+        .play()
+        .then(() => {
+          // console.log("resolved");
+        })
+        .catch(() => {
+          // console.log("rejected");
+        });
     },
     move(from, to, promotion) {
       const tempMove = { from, to };
@@ -133,12 +227,32 @@ export default {
 
       const legalMove = chess.move(tempMove);
       if (legalMove) {
+        this.playSound();
         this.update();
-        console.log("legal move");
-      } else console.log("illegal move");
+        // console.log("legal move");
+      }
+      // else console.log("illegal move");
+    },
+    pieceDragged({ position }) {
+      const moves = chess
+        .moves({ verbose: true })
+        .filter((move) => move.from === position);
+
+      for (const move of moves) {
+        const to = move.to;
+        const hrow = 8 - parseInt(to.charAt(1));
+        const hcol = to.charAt(0).charCodeAt(0) - 96 - 1;
+        this.highlights[hrow][hcol] = true;
+      }
+    },
+    pieceDragEnd() {
+      for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+          this.highlights[i][j] = false;
+        }
+      }
     },
     moveChessPiece({ from, to }) {
-      // this.move(from, to);
       this.handleMove(from, to);
     },
   },
@@ -165,5 +279,9 @@ export default {
 .board-enter-active,
 .board-leave-active {
   transition: all 1s ease;
+}
+
+.rotate-board {
+  transform: rotate(180deg);
 }
 </style>

@@ -1,7 +1,8 @@
 <template>
   <div
-    class="w-14 h-14 rounded-md flex items-center justify-center font-bold text-sm "
+    class="w-14 h-14 rounded-md flex items-center justify-center font-bold text-sm transition-transform duration-300 "
     ref="piece"
+    :class="{ 'rotate-piece': rotate }"
   >
     <img :src="getImage()" alt="" class="w-5/6 h-5/6" />
     <!-- {{ piece.type }} -->
@@ -13,7 +14,7 @@ export const PieceDataType = "text/x-kanban-card";
 import { getPosition } from "./utils";
 export default {
   name: "chess-piece",
-  props: ["piece", "row", "col"],
+  props: ["piece", "row", "col", "rotate"],
   mounted() {
     this.setDraggable();
   },
@@ -45,9 +46,19 @@ export default {
       dataTransfer.setData(PieceDataType, getPosition(this.row, this.col));
       dataTransfer.effectAllowed = "move";
       event.target.style.opacity = 0.2;
+      this.$emit("piece-dragged", {
+        position: getPosition(this.row, this.col),
+        row: this.row,
+        col: this.col,
+      });
     },
     handleDragEnd(event) {
       event.target.style.opacity = 1;
+      this.$emit("piece-drag-end", {
+        position: getPosition(this.row, this.col),
+        row: this.row,
+        col: this.col,
+      });
     },
     setDraggable() {
       const piece = this.$refs.piece;
@@ -59,4 +70,8 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.rotate-piece {
+  transform: rotate(180deg);
+}
+</style>

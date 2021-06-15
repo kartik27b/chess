@@ -5,6 +5,10 @@
     :class="{
       'bg-gray-800': (row + col) % 2,
       'bg-gray-700': !((row + col) % 2),
+      'bg-red-600': kill,
+      'bg-green-500': highlight && !kill,
+      'bg-blue-500': onOver,
+      'bg-yellow-400': inCheck,
     }"
   >
     <promote
@@ -12,13 +16,16 @@
       :promotion="promotion"
       @make-promotion="$emit('make-promotion', $event)"
     ></promote>
+
     <chess-piece
+      :rotate="rotate"
       :piece="piece"
       :row="row"
       :col="col"
       v-else-if="piece"
+      @piece-dragged="$emit('piece-dragged', $event)"
+      @piece-drag-end="$emit('piece-drag-end')"
     ></chess-piece>
-    <!-- <promote v-else-if="promotion"></promote> -->
   </div>
 </template>
 
@@ -33,7 +40,15 @@ import Promote from "./Promote.vue";
 
 export default {
   name: "chess-square",
-  props: ["row", "col", "piece", "pendingPromotion"],
+  props: [
+    "row",
+    "col",
+    "piece",
+    "pendingPromotion",
+    "highlight",
+    "rotate",
+    "checkProp",
+  ],
   components: {
     ChessPiece,
     Promote,
@@ -58,10 +73,27 @@ export default {
       this.promotion = null;
     }
   },
+  computed: {
+    kill() {
+      return this.highlight && this.piece;
+    },
+    inCheck() {
+      if (
+        this.checkProp &&
+        this.piece &&
+        this.piece.type === "k" &&
+        this.checkProp.turn === this.piece.color
+      ) {
+        return true;
+      }
+      return false;
+    },
+  },
   data() {
     return {
-      // onOver: false,
+      onOver: false,
       promotion: null,
+      // kill: false,
     };
   },
   methods: {
@@ -70,6 +102,7 @@ export default {
       square.addEventListener("dragenter", this.handleDragEnter);
       square.addEventListener("dragover", this.handleDragOver);
       square.addEventListener("drop", this.handleDrop);
+      square.addEventListener("dragleave", this.handleDragLeave);
     },
 
     handleDragEnter(event) {
@@ -77,11 +110,17 @@ export default {
         event.preventDefault();
       }
     },
+    handleDragLeave(event) {
+      this.onOver = false;
+    },
     handleDragOver(event) {
+      this.onOver = true;
+      // console.log("drag over");
       event.dataTransfer.dropEffect = "move";
       event.preventDefault();
     },
     handleDrop(event) {
+      this.onOver = false;
       const data = event.dataTransfer.getData(PieceDataType);
       //   console.log(event.dataTransfer.items);
       // console.log("from", data, " to", getPosition(this.row, this.col));
